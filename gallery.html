@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery — RepPic</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .gallery-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted2);
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .view-btn.active,
+    .view-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .photo-count {
+      font-size: 0.8rem;
+      color: var(--muted2);
+      margin-left: auto;
+    }
+
+    #lightbox-info {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20,20,20,0.95);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      font-size: 0.82rem;
+      color: var(--muted2);
+      z-index: 1001;
+      display: none;
+      text-align: center;
+    }
+
+    .modal-overlay.open ~ #lightbox-info {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="nav-logo">RepPic</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="upload.html">Upload</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="compare.html">Compare</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <div class="eyebrow">All entries</div>
+      <h2>GALLERY</h2>
+      <p>Your full photo history. Click any image to view full size.</p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="gallery-toolbar">
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn active" data-tag="all">All</button>
+        <button class="filter-btn" data-tag="Front">Front</button>
+        <button class="filter-btn" data-tag="Back">Back</button>
+        <button class="filter-btn" data-tag="Side">Side</button>
+        <button class="filter-btn" data-tag="Flexing">Flexing</button>
+        <button class="filter-btn" data-tag="Casual">Casual</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="view-toggle">
+          <button class="view-btn active" id="view-grid" title="Grid">⊞</button>
+          <button class="view-btn" id="view-timeline" title="Timeline">☰</button>
+        </div>
+        <span class="photo-count" id="photo-count"></span>
+      </div>
+    </div>
+
+    <div id="gallery-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentFilter = 'all';
+    let currentView = 'grid';
+    let currentPhotos = [];
+
+    function getFiltered() {
+      const photos = getPhotos();
+      if (currentFilter === 'all') return photos;
+      return photos.filter(p => p.tag === currentFilter);
+    }
+
+    function renderGrid(photos) {
+      if (photos.length === 0) return emptyHTML();
+      return `<div class="photo-grid">${
+        photos.map(p => `
+          <div class="photo-card">
+            <img src="${p.src}" alt="${p.label}" onclick="openLightbox('${p.id}')" />
+            <button class="delete-btn" onclick="handleDelete('${p.id}')">✕</button>
+            <div class="photo-info">
+              <div class="photo-date">${formatDate(p.createdAt)}</div>
+              <div class="photo-label">${p.label || 'Untitled'}</div>
+              ${p.tag ? `<span class="photo-tag">${p.tag}</span>` : ''}
+            </div>
+          </div>`).join('')
+      }</div>`;
+    }
+
+    function renderTimeline(photos) {
+      if (photos.length === 0) return emptyHTML();
+      const groups = groupByMonth(photos);
+      return `<div class="timeline">${
+        Object.entries(groups).map(([month, items]) => `
+          <div class="timeline-month">
+            <div class="timeline-month-header">
+              <span>${month}</span>
+              <span style="font-size:0.75rem;font-family:'DM Sans',sans-serif;font-weight:400;">${items.length} photo${items.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="timeline-month-photos">
+              ${items.map(p => `
+                <img src="${p.src}" alt="${p.label}" title="${p.label} — ${formatDate(p.createdAt)}" onclick="openLightbox('${p.id}')" />`
+              ).join('')}
+            </div>
+          </div>`).join('')
+      }</div>`;
+    }
+
+    function emptyHTML() {
+      return `<div class="empty-state">
+        <div class="empty-icon">📷</div>
+        <p>${currentFilter === 'all' ? 'No photos yet.' : `No "${currentFilter}" photos found.`}</p>
+        <a href="upload.html" class="btn btn-primary">+ Upload Photo</a>
+      </div>`;
+    }
+
+    function render() {
+      currentPhotos = getFiltered();
+      const container = document.getElementById('gallery-container');
+      const count = document.getElementById('photo-count');
+      count.textContent = `${currentPhotos.length} photo${currentPhotos.length !== 1 ? 's' : ''}`;
+      container.innerHTML = currentView === 'grid'
+        ? renderGrid(currentPhotos)
+        : renderTimeline(currentPhotos);
+    }
+
+    // Lightbox with info
+    let lightboxPhotos = [];
+    let lightboxIndex = 0;
+
+    function openLightbox(id) {
+      lightboxPhotos = getFiltered();
+      lightboxIndex = lightboxPhotos.findIndex(p => p.id === id);
+      const photo = lightboxPhotos[lightboxIndex];
+      if (!photo) return;
+      openModal(photo.src);
+      updateLightboxInfo(photo);
+    }
+
+    function updateLightboxInfo(photo) {
+      let info = document.getElementById('lightbox-info');
+      if (!info) {
+        info = document.createElement('div');
+        info.id = 'lightbox-info';
+        document.body.appendChild(info);
+      }
+      const parts = [formatDate(photo.createdAt)];
+      if (photo.label) parts.push(photo.label);
+      if (photo.weight) parts.push(`⚖️ ${photo.weight}`);
+      if (photo.notes) parts.push(`"${photo.notes.slice(0, 60)}${photo.notes.length > 60 ? '…' : ''}"`);
+      info.textContent = parts.join(' · ');
+      info.style.display = 'block';
+    }
+
+    // Keyboard nav in lightbox
+    document.addEventListener('keydown', e => {
+      const overlay = document.getElementById('modal-overlay');
+      if (!overlay || !overlay.classList.contains('open')) return;
+      if (e.key === 'ArrowRight' && lightboxIndex < lightboxPhotos.length - 1) {
+        lightboxIndex++;
+        const p = lightboxPhotos[lightboxIndex];
+        document.getElementById('modal-img').src = p.src;
+        updateLightboxInfo(p);
+      }
+      if (e.key === 'ArrowLeft' && lightboxIndex > 0) {
+        lightboxIndex--;
+        const p = lightboxPhotos[lightboxIndex];
+        document.getElementById('modal-img').src = p.src;
+        updateLightboxInfo(p);
+      }
+      if (e.key === 'Escape') {
+        const info = document.getElementById('lightbox-info');
+        if (info) info.style.display = 'none';
+      }
+    });
+
+    function handleDelete(id) {
+      if (confirm('Delete this photo? This cannot be undone.')) {
+        deletePhoto(id);
+        showToast('Photo deleted.');
+        render();
+      }
+    }
+
+    // Filter buttons
+    document.getElementById('filter-bar').addEventListener('click', e => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.tag;
+      render();
+    });
+
+    // View toggle
+    document.getElementById('view-grid').addEventListener('click', () => {
+      currentView = 'grid';
+      document.getElementById('view-grid').classList.add('active');
+      document.getElementById('view-timeline').classList.remove('active');
+      render();
+    });
+
+    document.getElementById('view-timeline').addEventListener('click', () => {
+      currentView = 'timeline';
+      document.getElementById('view-timeline').classList.add('active');
+      document.getElementById('view-grid').classList.remove('active');
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RepPic — Workout Progress Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .hero {
+      padding: 80px 0 60px;
+      position: relative;
+    }
+
+    .hero .eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      line-height: 0.95;
+      margin-bottom: 24px;
+    }
+
+    .hero p {
+      color: var(--muted2);
+      font-size: 1rem;
+      max-width: 440px;
+      margin-bottom: 36px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero-decoration {
+      position: absolute;
+      top: 60px;
+      right: 0;
+      width: 320px;
+      height: 320px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      overflow: hidden;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 800px) {
+      .hero-decoration { display: none; }
+    }
+
+    .hero-decoration .deco-cell {
+      background: var(--surface);
+      aspect-ratio: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-decoration .deco-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+    }
+
+    .hero-decoration .deco-cell .deco-placeholder {
+      width: 100%;
+      height: 100%;
+      background: var(--surface2);
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 3px;
+      color: var(--muted2);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .recent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .tip-box {
+      background: var(--accent-dim);
+      border: 1px solid rgba(232,255,71,0.2);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-top: 48px;
+    }
+
+    .tip-box .tip-icon {
+      font-size: 1.3rem;
+      margin-top: 2px;
+    }
+
+    .tip-box p {
+      font-size: 0.85rem;
+      color: var(--muted2);
+      line-height: 1.7;
+    }
+
+    .tip-box strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="nav-logo">RepPic</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="upload.html">Upload</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="compare.html">Compare</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+    <section class="hero">
+      <div class="hero-decoration" id="hero-decoration"></div>
+      <div class="eyebrow">Your journey. In pictures.</div>
+      <h1>TRACK YOUR<br><span class="accent">PROGRESS</span></h1>
+      <p>Upload photos of your physique over time and watch your transformation unfold. No numbers. No charts. Just you.</p>
+      <div class="hero-actions">
+        <a href="upload.html" class="btn btn-primary">+ Add Photo</a>
+        <a href="gallery.html" class="btn btn-ghost">View Gallery</a>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Photos logged</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-months">0</div>
+        <div class="stat-label">Months tracked</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-streak">0</div>
+        <div class="stat-label">Day streak</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-latest">—</div>
+        <div class="stat-label">Last upload</div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Recent Photos -->
+    <div class="section-title">Recent uploads</div>
+    <div id="recent-container"></div>
+
+    <!-- Tip -->
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <p><strong>Pro tip:</strong> For the most accurate progress tracking, take photos at the same time of day, in the same lighting, and from the same angle every time. Consistency in your photos reveals the true story of your transformation.</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    function renderStats() {
+      const photos = getPhotos();
+      document.getElementById('stat-total').textContent = photos.length;
+
+      const months = new Set(photos.map(p => formatMonth(p.createdAt)));
+      document.getElementById('stat-months').textContent = months.size;
+
+      if (photos.length > 0) {
+        const latest = new Date(photos[0].createdAt);
+        const now = new Date();
+        const diffDays = Math.floor((now - latest) / 86400000);
+        document.getElementById('stat-streak').textContent = diffDays === 0 ? '1' : diffDays + 'd';
+        document.getElementById('stat-latest').textContent =
+          latest.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    }
+
+    function renderRecent() {
+      const container = document.getElementById('recent-container');
+      const photos = getPhotos().slice(0, 8);
+
+      if (photos.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📷</div>
+            <p>No photos yet. Start your journey by uploading your first photo.</p>
+            <a href="upload.html" class="btn btn-primary">Upload First Photo</a>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="recent-grid">${
+        photos.map(p => `
+          <div class="photo-card">
+            <img src="${p.src}" alt="${p.label}" onclick="openModal('${p.src}')" />
+            <button class="delete-btn" onclick="handleDelete('${p.id}')">✕</button>
+            <div class="photo-info">
+              <div class="photo-date">${formatDate(p.createdAt)}</div>
+              <div class="photo-label">${p.label || 'Untitled'}</div>
+              ${p.tag ? `<span class="photo-tag">${p.tag}</span>` : ''}
+            </div>
+          </div>`).join('')
+      }</div>
+      ${photos.length === 8 ? `<div style="text-align:center;margin-top:24px"><a href="gallery.html" class="btn btn-ghost">View All Photos →</a></div>` : ''}`;
+    }
+
+    function renderHeroDecoration() {
+      const photos = getPhotos().slice(0, 4);
+      const deco = document.getElementById('hero-decoration');
+      const cells = [0,1,2,3].map(i => {
+        const p = photos[i];
+        return `<div class="deco-cell">${p
+          ? `<img src="${p.src}" alt="" />`
+          : `<div class="deco-placeholder"></div>`
+        }</div>`;
+      });
+      deco.innerHTML = cells.join('');
+    }
+
+    function handleDelete(id) {
+      if (confirm('Delete this photo?')) {
+        deletePhoto(id);
+        showToast('Photo deleted.');
+        renderStats();
+        renderRecent();
+        renderHeroDecoration();
+      }
+    }
+
+    renderStats();
+    renderRecent();
+    renderHeroDecoration();
+  </script>
+</body>
+</html>
