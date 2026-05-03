@@ -6,11 +6,11 @@
   <title>RepPic — Workout Progress Tracker</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* ── HERO ── */
     .hero {
       padding: 80px 0 60px;
       position: relative;
     }
-
     .hero .eyebrow {
       font-size: 0.72rem;
       font-weight: 600;
@@ -18,119 +18,122 @@
       text-transform: uppercase;
       color: var(--accent);
       margin-bottom: 16px;
+      animation: slideInLeft 0.5s ease both;
     }
-
     .hero h1 {
       line-height: 0.95;
       margin-bottom: 24px;
+      animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.08s both;
     }
-
     .hero p {
       color: var(--muted2);
       font-size: 1rem;
       max-width: 440px;
       margin-bottom: 36px;
+      animation: fadeUp 0.6s ease 0.16s both;
     }
-
     .hero-actions {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      animation: fadeUp 0.6s ease 0.24s both;
     }
 
+    /* ── HERO DECORATION GRID ── */
     .hero-decoration {
       position: absolute;
-      top: 60px;
-      right: 0;
-      width: 320px;
-      height: 320px;
+      top: 50px; right: 0;
+      width: 300px; height: 300px;
       border: 1px solid var(--border);
       border-radius: 2px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 2px;
       overflow: hidden;
-      opacity: 0.6;
+      opacity: 0;
+      animation: scaleIn 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s forwards;
     }
-
-    @media (max-width: 800px) {
-      .hero-decoration { display: none; }
-    }
-
-    .hero-decoration .deco-cell {
+    @media (max-width: 800px) { .hero-decoration { display: none; } }
+    .deco-cell {
       background: var(--surface);
-      aspect-ratio: 1;
       overflow: hidden;
       position: relative;
     }
-
-    .hero-decoration .deco-cell img {
-      width: 100%;
-      height: 100%;
+    .deco-cell img {
+      width: 100%; height: 100%;
       object-fit: cover;
-      opacity: 0.5;
+      opacity: 0.45;
+      transition: opacity 0.4s;
     }
+    .deco-cell:hover img { opacity: 0.7; }
+    .deco-placeholder { width: 100%; height: 100%; background: var(--surface2); }
 
-    .hero-decoration .deco-cell .deco-placeholder {
-      width: 100%;
-      height: 100%;
-      background: var(--surface2);
-    }
-
+    /* ── SECTION TITLE ── */
     .section-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1rem;
       letter-spacing: 3px;
       color: var(--muted2);
-      text-transform: uppercase;
       margin-bottom: 20px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
-
     .section-title::after {
       content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
     }
 
+    /* ── RECENT GRID ── */
     .recent-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 12px;
     }
 
+    /* ── TIP BOX ── */
     .tip-box {
       background: var(--accent-dim);
-      border: 1px solid rgba(232,255,71,0.2);
+      border: 1px solid rgba(232,255,71,0.15);
       border-radius: var(--radius);
       padding: 20px 24px;
       display: flex;
       gap: 16px;
       align-items: flex-start;
       margin-top: 48px;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
-
-    .tip-box .tip-icon {
-      font-size: 1.3rem;
-      margin-top: 2px;
+    .tip-box:hover {
+      border-color: rgba(232,255,71,0.3);
+      box-shadow: 0 0 20px rgba(232,255,71,0.06);
     }
+    .tip-box .tip-icon { font-size: 1.3rem; margin-top: 2px; }
+    .tip-box p { font-size: 0.85rem; color: var(--muted2); line-height: 1.7; }
+    .tip-box strong { color: var(--accent); font-weight: 600; }
 
-    .tip-box p {
-      font-size: 0.85rem;
-      color: var(--muted2);
-      line-height: 1.7;
+    /* ── SCANLINE ── */
+    .scanline {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(232,255,71,0.4), transparent);
+      z-index: 9997;
+      pointer-events: none;
+      animation: scanDown 6s linear infinite;
+      opacity: 0.5;
     }
-
-    .tip-box strong {
-      color: var(--accent);
-      font-weight: 600;
+    @keyframes scanDown {
+      0%   { top: 0%; opacity: 0; }
+      5%   { opacity: 0.5; }
+      95%  { opacity: 0.5; }
+      100% { top: 100%; opacity: 0; }
     }
   </style>
 </head>
 <body>
+  <div class="scanline"></div>
+
   <nav>
     <a href="index.html" class="nav-logo">RepPic</a>
     <ul class="nav-links">
@@ -165,7 +168,7 @@
       </div>
       <div class="stat-box">
         <div class="stat-num" id="stat-streak">0</div>
-        <div class="stat-label">Day streak</div>
+        <div class="stat-label">Days since last</div>
       </div>
       <div class="stat-box">
         <div class="stat-num" id="stat-latest">—</div>
@@ -180,7 +183,7 @@
     <div id="recent-container"></div>
 
     <!-- Tip -->
-    <div class="tip-box">
+    <div class="tip-box reveal">
       <div class="tip-icon">💡</div>
       <p><strong>Pro tip:</strong> For the most accurate progress tracking, take photos at the same time of day, in the same lighting, and from the same angle every time. Consistency in your photos reveals the true story of your transformation.</p>
     </div>
@@ -188,18 +191,34 @@
 
   <script src="app.js"></script>
   <script>
+    function animateNumber(el, target) {
+      if (isNaN(target)) return;
+      let start = 0;
+      const duration = 600;
+      const step = timestamp => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        el.textContent = Math.floor(progress * target);
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target;
+      };
+      requestAnimationFrame(step);
+    }
+
     function renderStats() {
       const photos = getPhotos();
-      document.getElementById('stat-total').textContent = photos.length;
+      const totalEl = document.getElementById('stat-total');
+      const monthsEl = document.getElementById('stat-months');
+
+      animateNumber(totalEl, photos.length);
 
       const months = new Set(photos.map(p => formatMonth(p.createdAt)));
-      document.getElementById('stat-months').textContent = months.size;
+      animateNumber(monthsEl, months.size);
 
       if (photos.length > 0) {
         const latest = new Date(photos[0].createdAt);
-        const now = new Date();
-        const diffDays = Math.floor((now - latest) / 86400000);
-        document.getElementById('stat-streak').textContent = diffDays === 0 ? '1' : diffDays + 'd';
+        const diffDays = Math.floor((new Date() - latest) / 86400000);
+        document.getElementById('stat-streak').textContent = diffDays === 0 ? 'Today' : diffDays + 'd ago';
         document.getElementById('stat-latest').textContent =
           latest.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       }
@@ -208,7 +227,6 @@
     function renderRecent() {
       const container = document.getElementById('recent-container');
       const photos = getPhotos().slice(0, 8);
-
       if (photos.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
@@ -218,10 +236,10 @@
           </div>`;
         return;
       }
-
       container.innerHTML = `<div class="recent-grid">${
         photos.map(p => `
           <div class="photo-card">
+            <div class="photo-overlay"></div>
             <img src="${p.src}" alt="${p.label}" onclick="openModal('${p.src}')" />
             <button class="delete-btn" onclick="handleDelete('${p.id}')">✕</button>
             <div class="photo-info">
@@ -237,14 +255,13 @@
     function renderHeroDecoration() {
       const photos = getPhotos().slice(0, 4);
       const deco = document.getElementById('hero-decoration');
-      const cells = [0,1,2,3].map(i => {
+      deco.innerHTML = [0,1,2,3].map(i => {
         const p = photos[i];
         return `<div class="deco-cell">${p
           ? `<img src="${p.src}" alt="" />`
           : `<div class="deco-placeholder"></div>`
         }</div>`;
-      });
-      deco.innerHTML = cells.join('');
+      }).join('');
     }
 
     function handleDelete(id) {

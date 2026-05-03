@@ -12,10 +12,7 @@
       gap: 40px;
       align-items: start;
     }
-
-    @media (max-width: 700px) {
-      .upload-layout { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 700px) { .upload-layout { grid-template-columns: 1fr; } }
 
     .preview-box {
       background: var(--surface);
@@ -27,20 +24,26 @@
       justify-content: center;
       overflow: hidden;
       position: relative;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      animation: scaleIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s both;
     }
-
+    .preview-box.has-image {
+      border-color: rgba(232,255,71,0.3);
+      box-shadow: 0 0 30px rgba(232,255,71,0.08);
+    }
     .preview-box img {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       object-fit: cover;
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
     }
+    .preview-box:hover img { transform: scale(1.02); }
 
     .preview-placeholder {
       text-align: center;
       color: var(--muted);
       font-size: 0.85rem;
+      animation: fadeIn 0.4s ease;
     }
-
     .preview-placeholder .ph-icon {
       font-size: 2.5rem;
       margin-bottom: 10px;
@@ -49,16 +52,19 @@
 
     .preview-change {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
+      bottom: 12px; right: 12px;
     }
 
+    /* ── FORM BOX ── */
     .form-box {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 32px;
+      animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s both;
+      transition: border-color 0.3s;
     }
+    .form-box:hover { border-color: #333; }
 
     .form-box h3 {
       font-family: 'Bebas Neue', sans-serif;
@@ -74,8 +80,14 @@
       margin-top: 28px;
     }
 
+    /* ── DROP ZONE ── */
+    .drop-wrap {
+      animation: fadeUp 0.6s ease 0.2s both;
+    }
+
+    /* ── GUIDELINES ── */
     .guidelines {
-      margin-top: 40px;
+      margin-top: 48px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px;
@@ -86,25 +98,67 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px;
+      transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+      animation: fadeUp 0.6s ease both;
     }
+    .guideline-card:nth-child(1) { animation-delay: 0.1s; }
+    .guideline-card:nth-child(2) { animation-delay: 0.16s; }
+    .guideline-card:nth-child(3) { animation-delay: 0.22s; }
+    .guideline-card:nth-child(4) { animation-delay: 0.28s; }
 
+    .guideline-card:hover {
+      border-color: rgba(232,255,71,0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
     .guideline-card .g-icon {
       font-size: 1.3rem;
       margin-bottom: 8px;
+      display: block;
+      transition: transform 0.3s;
     }
-
+    .guideline-card:hover .g-icon { transform: scale(1.2) rotate(-5deg); }
     .guideline-card h4 {
       font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.5px;
       margin-bottom: 4px;
     }
+    .guideline-card p { font-size: 0.78rem; color: var(--muted2); line-height: 1.6; }
 
-    .guideline-card p {
-      font-size: 0.78rem;
-      color: var(--muted2);
-      line-height: 1.6;
+    /* ── PROGRESS INDICATOR ── */
+    .upload-progress {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      animation: fadeIn 0.3s ease;
     }
+    .upload-progress.show { display: flex; }
+    .progress-bar-wrap {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ── SAVE SUCCESS FLASH ── */
+    @keyframes flashGreen {
+      0%   { box-shadow: 0 0 0 rgba(232,255,71,0); }
+      40%  { box-shadow: 0 0 40px rgba(232,255,71,0.3); }
+      100% { box-shadow: 0 0 0 rgba(232,255,71,0); }
+    }
+    .flash { animation: flashGreen 0.8s ease forwards; }
   </style>
 </head>
 <body>
@@ -140,17 +194,22 @@
           </label>
         </div>
 
-        <!-- Drop zone (shown when no preview) -->
-        <label class="upload-zone" id="drop-zone" style="margin-top:12px; display:flex; flex-direction:column; align-items:center;">
-          <input type="file" accept="image/*" id="file-input-main" />
-          <div class="upload-icon">📁</div>
-          <p>Click or drag & drop a photo here</p>
-          <div class="upload-hint">JPEG, PNG, WEBP — max 20MB</div>
-        </label>
+        <div class="drop-wrap">
+          <label class="upload-zone" id="drop-zone" style="margin-top:12px; display:flex; flex-direction:column; align-items:center;">
+            <input type="file" accept="image/*" id="file-input-main" />
+            <div class="upload-icon">📁</div>
+            <p>Click or drag & drop a photo here</p>
+            <div class="upload-hint">JPEG, PNG, WEBP — max 20MB</div>
+          </label>
+          <div class="upload-progress" id="upload-progress">
+            <span>Processing...</span>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+          </div>
+        </div>
       </div>
 
       <!-- Right: form -->
-      <div class="form-box">
+      <div class="form-box" id="form-box">
         <h3>Photo details</h3>
 
         <div class="form-group">
@@ -192,22 +251,22 @@
     <!-- Guidelines -->
     <div class="guidelines">
       <div class="guideline-card">
-        <div class="g-icon">🕐</div>
+        <span class="g-icon">🕐</span>
         <h4>Same time of day</h4>
         <p>Morning photos (fasted) tend to give the most consistent baseline.</p>
       </div>
       <div class="guideline-card">
-        <div class="g-icon">💡</div>
+        <span class="g-icon">💡</span>
         <h4>Consistent lighting</h4>
         <p>Natural light or the same room light each time prevents misleading comparisons.</p>
       </div>
       <div class="guideline-card">
-        <div class="g-icon">📐</div>
+        <span class="g-icon">📐</span>
         <h4>Same angle</h4>
         <p>Mark your foot positions on the floor. Front, back, and side angles each tell a different story.</p>
       </div>
       <div class="guideline-card">
-        <div class="g-icon">📅</div>
+        <span class="g-icon">📅</span>
         <h4>Weekly check-ins</h4>
         <p>Once a week is enough to see meaningful change without obsessing over daily variance.</p>
       </div>
@@ -216,78 +275,86 @@
 
   <script src="app.js"></script>
   <script>
-    let selectedFile = null;
     let selectedBase64 = null;
 
-    const dropZone     = document.getElementById('drop-zone');
+    const dropZone        = document.getElementById('drop-zone');
     const fileInputMain   = document.getElementById('file-input-main');
     const fileInputChange = document.getElementById('file-input-change');
-    const previewImg   = document.getElementById('preview-img');
+    const previewImg      = document.getElementById('preview-img');
+    const previewBox      = document.getElementById('preview-box');
     const previewPlaceholder = document.getElementById('preview-placeholder');
-    const changeBtn    = document.getElementById('change-btn');
-    const saveBtn      = document.getElementById('save-btn');
-    const resetBtn     = document.getElementById('reset-btn');
+    const changeBtn       = document.getElementById('change-btn');
+    const saveBtn         = document.getElementById('save-btn');
+    const resetBtn        = document.getElementById('reset-btn');
+    const progress        = document.getElementById('upload-progress');
+    const progressBar     = document.getElementById('progress-bar');
 
     async function handleFile(file) {
-      if (!file || !file.type.startsWith('image/')) {
-        showToast('Please select an image file.');
-        return;
-      }
-      if (file.size > 20 * 1024 * 1024) {
-        showToast('File too large. Max 20MB.');
-        return;
-      }
-      selectedFile = file;
+      if (!file || !file.type.startsWith('image/')) { showToast('Please select an image file.'); return; }
+      if (file.size > 20 * 1024 * 1024) { showToast('File too large. Max 20MB.'); return; }
+
+      // Show progress
+      progress.classList.add('show');
+      progressBar.style.width = '0%';
+      setTimeout(() => progressBar.style.width = '60%', 50);
+
       selectedBase64 = await fileToBase64(file);
+
+      progressBar.style.width = '100%';
+      setTimeout(() => {
+        progress.classList.remove('show');
+        progressBar.style.width = '0%';
+      }, 400);
+
       previewImg.src = selectedBase64;
       previewImg.style.display = 'block';
+      previewImg.style.animation = 'scaleIn 0.4s cubic-bezier(0.16,1,0.3,1)';
       previewPlaceholder.style.display = 'none';
       changeBtn.style.display = 'flex';
       dropZone.style.display = 'none';
+      previewBox.classList.add('has-image');
       saveBtn.disabled = false;
     }
 
-    fileInputMain.addEventListener('change', e => handleFile(e.target.files[0]));
+    fileInputMain.addEventListener('change',   e => handleFile(e.target.files[0]));
     fileInputChange.addEventListener('change', e => handleFile(e.target.files[0]));
 
-    // Drag & drop
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', e => {
       e.preventDefault();
       dropZone.classList.remove('drag-over');
       handleFile(e.dataTransfer.files[0]);
     });
 
-    // Save
     saveBtn.addEventListener('click', () => {
       if (!selectedBase64) return;
       const photo = {
-        src: selectedBase64,
-        label: document.getElementById('input-label').value.trim() || 'Untitled',
-        tag: document.getElementById('input-tag').value,
+        src:    selectedBase64,
+        label:  document.getElementById('input-label').value.trim() || 'Untitled',
+        tag:    document.getElementById('input-tag').value,
         weight: document.getElementById('input-weight').value.trim(),
-        notes: document.getElementById('input-notes').value.trim(),
+        notes:  document.getElementById('input-notes').value.trim(),
       };
       addPhoto(photo);
+      document.getElementById('form-box').classList.add('flash');
       showToast('✓ Photo saved!');
-      setTimeout(() => window.location.href = 'gallery.html', 1000);
+      setTimeout(() => navigateTo('gallery.html'), 900);
     });
 
-    // Reset
     resetBtn.addEventListener('click', () => {
-      selectedFile = null;
       selectedBase64 = null;
       previewImg.src = '';
       previewImg.style.display = 'none';
       previewPlaceholder.style.display = 'block';
       changeBtn.style.display = 'none';
       dropZone.style.display = 'flex';
+      previewBox.classList.remove('has-image');
       saveBtn.disabled = true;
-      document.getElementById('input-label').value = '';
-      document.getElementById('input-tag').value = '';
+      document.getElementById('input-label').value  = '';
+      document.getElementById('input-tag').value    = '';
       document.getElementById('input-weight').value = '';
-      document.getElementById('input-notes').value = '';
+      document.getElementById('input-notes').value  = '';
     });
   </script>
 </body>
