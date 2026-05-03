@@ -5,14 +5,14 @@
   --surface: #141414;
   --surface2: #1e1e1e;
   --border: #2a2a2a;
-  --accent: #e8ff47;
-  --accent-dim: rgba(232,255,71,0.10);
-  --accent-glow: rgba(232,255,71,0.18);
+  --accent: #f07070;
+  --accent-dim: rgba(240,112,112,0.12);
+  --accent-glow: rgba(240,112,112,0.18);
   --accent2: #ff4d4d;
   --text: #f0f0f0;
   --muted: #555;
   --muted2: #888;
-  --radius: 3px;
+  --radius: 25px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
